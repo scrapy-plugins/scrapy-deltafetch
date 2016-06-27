@@ -13,9 +13,12 @@ addons:
     packages:
       - libdb-dev
 
-install: pip install -U tox
+install: pip install -U tox codecov
 
 script: tox
+
+after_success:
+  - codecov
 
 #deploy:
   #provider: pypi
