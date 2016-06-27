@@ -7,27 +7,27 @@ env:
   matrix:
   - TOXENV=py27
   - TOXENV=py35
+  global:
+    secure: gkaTihzM+iZ4BTN/AjJO9S9SNCrzo2QWbW6CR1hybTMGt655GuUXdIfSlXuSi3XZEbFNhSItmNnvUT0X8K9uw1/5BiLahcz1PqK2/ppl7+JWnLoVWGZX+7jXnAK6qxpa0eqOBJBd15WGK0rZe0Wdz8Z6ZqfsdY60TZAjam8QkSKVPSM5JzL00GYrVP/mK5JnnPQqCEvk7xH/w+aDL1YR8k6regYrH8lXdebBNHmXi06maqMuV+m+4ZJHjOicUAZpCPE3Uof5Z6NZN2c5SFt1CTLjL01JNNRGlPvd6i9kVq2RHV90Esh9yxYcTNrzF/LvH7E5K8e9Zxx2pkEkd6xPZqUs30yEJQln63qM+OSs8fdH0yNfq83U+Sf/B9atk8VzLrz+BA7+w9BpTp1IHcYA9PPh8ngcBC6FhVVwwK6qqEunKiHeUkFlaNA4Iqd1QpPuuGygC1rEQbZj2W2w1XjGFhAtaI2D+Qz1+5L1yoOB1Fr4Qjy/PcZAn+3wO9c/zHfWOz6ksFiJiUa1ciMLtmQPA3GQT3poCqJic8uLVXBGLuHBXUlx7za/e8phTtyglRDm7I5Xid4mnBZIGQE/i/+yvG1mlQsJTcJobxTsYbD5t6+DtGWxUzEOloHK/7R2VEzw3zpCHQcXFs2cl4XY8Ov/xK7ccCiSKA1rmg5Ie41YJSs=
 
 addons:
   apt:
     packages:
-      - libdb-dev
+    - libdb-dev
 
 install: pip install -U tox codecov
 
 script: tox
 
 after_success:
-  - codecov
+- codecov
 
-#deploy:
-  #provider: pypi
-  #user: scrapy-plugins
-  #distributions: sdist bdist_wheel
-  #password:
-    #secure: iKVlMlKSr+LOuCCMMOqL65aYjNRy3k1Zb4d7NRN0JpWS5DGau8G8cEhJ1dY4uyc/DNKVJmd939OiLBsUqqCmz09+ozen/YrRNjEZS5lOwBNfhpiCESkbOjcInV1PQgx2XfuHGp8O/9vxtXjjH9WE9CabQ+8Zg5/rMMvXizT4/O4=
-  #on:
-    #tags: true
-    #all_branches: true
-    #repo: scrapy-plugins/scrapy-deltafetch
-    #condition: $TOXENV = py27
+deploy:
+  provider: pypi
+  user: redapple
+  password:
+    secure: pw5znAlmTbdg+AbWe2ixZ/fa3YBGnuNGCERz0lXkhZpuH6C6g1y/yzepx/dk5TY2QWrebia98nKeoNdvEoCpqU+e3qhqbqIEdIK9Fk1ISs1hrC4L1/qfDqAQ9vfCsPw9GgoQmIGlrCqSxGQDhY/AxdbNpaHcq4zUXz8IhPKcSulzkr2nMunTS47LSMa+rdK5kua/xDJatlCq/PbjbVlvrvyuOEFryu0yBMEonSvm5cdWagy42RWnOCRqdzlYxzdkV07SPGc8cehpKoaOIbFkkv2rDf6wU4pDOLlwcVPs/aKRxlxVpEGtHjkMMFT3NsWs95c/yVT50mQXuYsv0jNNYaMaQ6x43yDIVGYyKYyOJo9DAJCWyu8vyHmuQv2YjCpNKXfigWoB8h6MNi6VKG36+xm8mfZlRWENjKF1O7VmrsKv2n68MIfBpSDb/HkGSK3DeY0Hgqkv7f3cc0vyIZpzmrnFNqtPUjukqiSZJR6U24OlCEWh3R8X6USvMiS7dJd2GdhojU0UXbfT1oMI6SWpzKzg//eXTw769MG2TeTs9vFyLWc5RpmZzUmTzGOcoBlH4YZw852AqjhwcukW5ieK43aXS9HDJunHrtWbl791vU5XuAg1/0iauxTll1bJ0uF38JWakq5tnk/lf7ufBQBizfEcqiSDOcomHK2M+VWQTMg=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: scrapy-plugins/scrapy-deltafetch
