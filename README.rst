@@ -1,3 +1,12 @@
+scrapy-deltafetch
+-----------------
+
+.. image:: https://travis-ci.org/scrapy-plugins/scrapy-deltafetch.svg?branch=master
+    :target: https://travis-ci.org/scrapy-plugins/scrapy-deltafetch
+
+.. image:: https://codecov.io/gh/scrapy-plugins/scrapy-deltafetch/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/scrapy-plugins/scrapy-deltafetch
+
 This is a Scrapy spider middleware to ignore requests
 to pages containing items seen in previous crawls of the same spider,
 thus producing a "delta crawl" containing only new items.
