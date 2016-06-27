@@ -8,11 +8,10 @@ env:
   - TOXENV=py27
   - TOXENV=py35
 
-#addons:
-  #apt:
-    #packages:
-      #- language-pack-fr
-      #- libdb-dev
+addons:
+  apt:
+    packages:
+      - libdb-dev
 
 install: pip install -U tox
 
