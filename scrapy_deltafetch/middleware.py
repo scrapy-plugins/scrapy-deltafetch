@@ -42,7 +42,7 @@ class DeltaFetch(object):
         try:
             dbmodule = __import__('bsddb3').db
         except ImportError:
-            raise NotConfigured('bsddb or bsddb3 is required')
+            raise NotConfigured('bsddb3 is required')
         self.dbmodule = dbmodule
         self.dir = dir
         self.reset = reset
