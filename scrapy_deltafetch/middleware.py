@@ -10,31 +10,14 @@ from scrapy import log, signals
 
 
 class DeltaFetch(object):
-    """This is a spider middleware to ignore requests to pages containing items
+    """
+    This is a spider middleware to ignore requests to pages containing items
     seen in previous crawls of the same spider, thus producing a "delta crawl"
     containing only new items.
 
     This also speeds up the crawl, by reducing the number of requests that need
     to be crawled, and processed (typically, item requests are the most cpu
     intensive).
-
-    Supported settings:
-
-    * DELTAFETCH_ENABLED - to enable (or disable) this extension
-    * DELTAFETCH_DIR - directory where to store state
-    * DELTAFETCH_RESET - reset the state, clearing out all seen requests
-
-    Supported spider arguments:
-
-    * deltafetch_reset - same effect as DELTAFETCH_RESET setting
-
-    Supported request meta keys:
-
-    * deltafetch_key - used to define the lookup key for that request. by
-      default it's the fingerprint, but it can be changed to contain an item
-      id, for example. This requires support from the spider, but makes the
-      extension more efficient for sites that many URLs for the same item.
-
     """
 
     def __init__(self, dir, reset=False, stats=None):
