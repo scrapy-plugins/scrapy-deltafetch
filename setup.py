@@ -7,7 +7,7 @@ setup(
     description='Scrapy middleware to ignore previously crawled pages',
     author='Scrapinghub',
     author_email='info@scrapinghub.com',
-    url='http://github.com/scrapy-deltafetch/scrapy-deltafetch',
+    url='http://github.com/scrapy-plugins/scrapy-deltafetch',
     packages=['scrapy_deltafetch'],
     platforms=['Any'],
     classifiers=[
