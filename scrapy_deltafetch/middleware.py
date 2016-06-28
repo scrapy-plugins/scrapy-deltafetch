@@ -76,7 +76,7 @@ class DeltaFetch(object):
                     if self.stats:
                         self.stats.inc_value('deltafetch/skipped', spider=spider)
                     continue
-            elif isinstance(r, BaseItem):
+            elif isinstance(r, (BaseItem, dict)):
                 key = self._get_key(response.request)
                 self.db[key] = str(time.time())
                 if self.stats:
