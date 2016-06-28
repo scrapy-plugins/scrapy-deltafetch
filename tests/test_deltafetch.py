@@ -29,9 +29,13 @@ class DeltaFetchTestCase(TestCase):
     mwcls = DeltaFetch
 
     def setUp(self):
-        self.spider = Spider('df_tests')
+        self.spider_name = 'df_tests'
+        self.spider = Spider(self.spider_name)
+
+        # DeltaFetch creates .db files named after the spider's name
         self.temp_dir = tempfile.gettempdir()
-        self.db_path = os.path.join(self.temp_dir, 'df_tests.db')
+        self.db_path = os.path.join(self.temp_dir, '%s.db' % self.spider.name)
+
         crawler = get_crawler(Spider)
         self.stats = StatsCollector(crawler)
 
@@ -70,6 +74,7 @@ class DeltaFetchTestCase(TestCase):
             self.assertEqual(instance.reset, True)
 
     def test_spider_opened_new(self):
+        """Middleware should create a .db file if not found."""
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
         mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
@@ -84,6 +89,7 @@ class DeltaFetchTestCase(TestCase):
         assert mw.db.get_open_flags() == dbmodule.db.DB_CREATE
 
     def test_spider_opened_existing(self):
+        """Middleware should open and use existing and valid .db files."""
         self._create_test_db()
         mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
         assert not hasattr(self.mwcls, 'db')
@@ -92,6 +98,26 @@ class DeltaFetchTestCase(TestCase):
         assert isinstance(mw.db, type(dbmodule.db.DB()))
         assert mw.db.items() == [(b'test_key_1', b'test_v_1'),
                                  (b'test_key_2', b'test_v_2')]
+        assert mw.db.get_type() == dbmodule.db.DB_HASH
+        assert mw.db.get_open_flags() == dbmodule.db.DB_CREATE
+
+    def test_spider_opened_corrupt_dbfile(self):
+        """Middleware should create a new .db if it cannot open it."""
+        # create an invalid .db file
+        with open(self.db_path, "wb") as dbfile:
+            dbfile.write(b'bad')
+        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        assert not hasattr(self.mwcls, 'db')
+
+        # file corruption is only detected when opening spider
+        mw.spider_opened(self.spider)
+        assert os.path.isdir(self.temp_dir)
+        assert os.path.exists(self.db_path)
+        assert hasattr(mw, 'db')
+        assert isinstance(mw.db, type(dbmodule.db.DB()))
+
+        # and db should be empty (it was re-created)
+        assert mw.db.items() == []
         assert mw.db.get_type() == dbmodule.db.DB_HASH
         assert mw.db.get_open_flags() == dbmodule.db.DB_CREATE
 
