@@ -2,6 +2,12 @@ Changes
 =======
 
 
+1.1.0 (2016-06-29)
+------------------
+
+Adds support for callbacks returning dict items.
+
+
 1.0.1 (2016-06-27)
 ------------------
 
