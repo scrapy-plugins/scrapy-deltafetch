@@ -29,7 +29,7 @@ On Ubuntu/Debian, you may need to install ``libdb-dev`` if it's not installed al
 Installation
 ============
 
-Install scrapy-splash using ``pip``::
+Install scrapy-deltafetch using ``pip``::
 
     $ pip install scrapy-deltafetch
 
