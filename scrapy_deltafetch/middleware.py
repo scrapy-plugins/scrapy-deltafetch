@@ -1,4 +1,6 @@
-import os, time
+import logging
+import os
+import time
 
 from scrapy.http import Request
 from scrapy.item import BaseItem
@@ -6,7 +8,10 @@ from scrapy.utils.request import request_fingerprint
 from scrapy.utils.project import data_path
 from scrapy.utils.python import to_bytes
 from scrapy.exceptions import NotConfigured
-from scrapy import log, signals
+from scrapy import signals
+
+
+logger = logging.getLogger(__name__)
 
 
 class DeltaFetch(object):
@@ -55,8 +60,8 @@ class DeltaFetch(object):
                          dbtype=self.dbmodule.DB_HASH,
                          flags=flag)
         except Exception:
-            spider.log("Failed to open DeltaFetch database at %s, "
-                       "trying to recreate it" % dbpath)
+            logger.warning("Failed to open DeltaFetch database at %s, "
+                           "trying to recreate it" % dbpath)
             if os.path.exists(dbpath):
                 os.remove(dbpath)
             self.db = self.dbmodule.DB()
@@ -72,7 +77,7 @@ class DeltaFetch(object):
             if isinstance(r, Request):
                 key = self._get_key(r)
                 if self.db.has_key(key):
-                    spider.log("Ignoring already visited: %s" % r, level=log.INFO)
+                    logger.info("Ignoring already visited: %s" % r)
                     if self.stats:
                         self.stats.inc_value('deltafetch/skipped', spider=spider)
                     continue
