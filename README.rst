@@ -75,7 +75,7 @@ Supported Scrapy spider arguments
 
 Example::
 
-    $ scrapy crawl example -s deltafetch_reset=1
+    $ scrapy crawl example -a deltafetch_reset=1
 
 
 Supported Scrapy request meta keys
