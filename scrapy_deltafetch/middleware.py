@@ -74,7 +74,7 @@ class DeltaFetch(object):
 
     def process_spider_output(self, response, result, spider):
         for r in result:
-            if isinstance(r, Request):
+            if isinstance(r, Request) and not r.meta.get('deltafetch_passthrough') == True:
                 key = self._get_key(r)
                 if self.db.has_key(key):
                     logger.info("Ignoring already visited: %s" % r)
