@@ -52,8 +52,10 @@ class DeltaFetchTestCase(TestCase):
         # void settings
         crawler.settings = Settings({})
         self.assertRaises(NotConfigured, self.mwcls.from_crawler, crawler)
-        with mock.patch('scrapy.utils.project.project_data_dir') as data_dir:
+        with mock.patch('scrapy.utils.project.project_data_dir') as data_dir, \
+             mock.patch('scrapy.utils.project.inside_project') as in_project:
             data_dir.return_value = self.temp_dir
+            in_project.return_value = True
 
             # simple project_data_dir mock with based settings
             crawler.settings = Settings({'DELTAFETCH_ENABLED': True})
@@ -251,8 +253,10 @@ class DeltaFetchTestCase(TestCase):
         crawler.settings = Settings({})
         self.assertRaises(NotConfigured, self.mwcls.from_crawler, crawler)
 
-        with mock.patch('scrapy.utils.project.project_data_dir') as data_dir:
+        with mock.patch('scrapy.utils.project.project_data_dir') as data_dir, \
+             mock.patch('scrapy.utils.project.inside_project') as in_project:
             data_dir.return_value = self.temp_dir
+            in_project.return_value = True
 
             # simple project_data_dir mock with based settings
             crawler.settings = Settings({'DELTAFETCH_ENABLED': True})
