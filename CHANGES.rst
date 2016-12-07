@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.2.0 (2016-12-07)
+------------------
+
+* Log through ``logging`` module instead of (deprecated) scrapy's spider.log().
+* Fix README on passing ``deltafetch_reset`` argument on the command line.
+
 
 1.1.0 (2016-06-29)
 ------------------
