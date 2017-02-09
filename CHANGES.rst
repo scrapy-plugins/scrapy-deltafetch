@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.2.1 (2017-02-09)
+------------------
+
+* Use python idiom to check key in dict
+* Update minimum Scrapy version supported by this extension to v1.1.0
+
 1.2.0 (2016-12-07)
 ------------------
 
