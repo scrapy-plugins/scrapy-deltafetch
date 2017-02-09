@@ -20,5 +20,5 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
     ],
-    install_requires=['Scrapy>=1.0', 'bsddb3']
+    install_requires=['Scrapy>=1.1.0', 'bsddb3']
 )
