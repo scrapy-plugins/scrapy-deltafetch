@@ -13,7 +13,7 @@ from scrapy.utils.python import to_bytes
 from scrapy.statscollectors import StatsCollector
 from scrapy.utils.test import get_crawler
 
-from scrapy_deltafetch.middleware import DeltaFetch
+from scrapy_deltafetch.middleware import DeltaFetch, DeltaFetchPseudoItem
 
 
 dbmodule = None
@@ -195,6 +195,22 @@ class DeltaFetchTestCase(TestCase):
         result = [BaseItem(), "not a base item"]
         self.assertEqual(list(mw.process_spider_output(
             response, result, self.spider)), result)
+        self.assertEqual(set(mw.db.keys()),
+                         set([b'key',
+                              b'test_key_1',
+                              b'test_key_2']))
+        assert mw.db[b'key']
+
+    def test_process_spider_output_pseudo_item(self):
+        self._create_test_db()
+        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        mw.spider_opened(self.spider)
+        response = mock.Mock()
+        response.request = Request('http://url',
+                                   meta={'deltafetch_key': 'key'})
+        result = [DeltaFetchPseudoItem(reason='skip')]
+        self.assertEqual(list(mw.process_spider_output(
+            response, result, self.spider)), [])
         self.assertEqual(set(mw.db.keys()),
                          set([b'key',
                               b'test_key_1',

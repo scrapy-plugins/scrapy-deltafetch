@@ -14,6 +14,15 @@ from scrapy import signals
 logger = logging.getLogger(__name__)
 
 
+class DeltaFetchPseudoItem(dict):
+    """
+    A pseudo item class to be used when:
+    - No actual item shall be generated from a page, and
+    - The page shall be skipped in future runs
+    """
+    pass
+
+
 class DeltaFetch(object):
     """
     This is a spider middleware to ignore requests to pages containing items
@@ -86,7 +95,11 @@ class DeltaFetch(object):
                 self.db[key] = str(time.time())
                 if self.stats:
                     self.stats.inc_value('deltafetch/stored', spider=spider)
-            yield r
+                    if isinstance(r, DeltaFetchPseudoItem):
+                        reason = r.get('reason', 'pseudo_item')
+                        self.stats.inc_value('deltafetch/stored/%s' % reason, spider=spider)
+            if not isinstance(r, DeltaFetchPseudoItem):
+                yield r
 
     def _get_key(self, request):
         key = request.meta.get('deltafetch_key') or request_fingerprint(request)
