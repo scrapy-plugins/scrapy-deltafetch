@@ -64,6 +64,7 @@ Supported Scrapy settings
 * ``DELTAFETCH_ENABLED`` — to enable (or disable) this extension
 * ``DELTAFETCH_DIR`` — directory where to store state
 * ``DELTAFETCH_RESET`` — reset the state, clearing out all seen requests
+* ``DELTAFETCH_USE_REDIRECT_URL`` - use/store redirect url fingerprint
 
 These usually go in your Scrapy project's ``settings.py``.
 

@@ -82,7 +82,13 @@ class DeltaFetch(object):
                         self.stats.inc_value('deltafetch/skipped', spider=spider)
                     continue
             elif isinstance(r, (BaseItem, dict)):
-                key = self._get_key(response.request)
+                req = response.request
+                redirect_urls = req.meta.get('redirect_urls', False)
+                store_redirect_url = spider.settings.getbool('DELTAFETCH_USE_REDIRECT_URL', False)
+
+                if store_redirect_url and redirect_urls:
+                    req = req.replace(url=redirect_urls[0])
+                key = self._get_key(req)
                 self.db[key] = str(time.time())
                 if self.stats:
                     self.stats.inc_value('deltafetch/stored', spider=spider)
