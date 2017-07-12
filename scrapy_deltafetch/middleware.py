@@ -25,7 +25,7 @@ class DeltaFetch(object):
     intensive).
     """
 
-    def __init__(self, dir, reset=False, stats=None):
+    def __init__(self, dir, reset=False, store_redirect_url=False, stats=None):
         dbmodule = None
         try:
             dbmodule = __import__('bsddb3').db
@@ -34,6 +34,7 @@ class DeltaFetch(object):
         self.dbmodule = dbmodule
         self.dir = dir
         self.reset = reset
+        self.store_redirect_url = store_redirect_url
         self.stats = stats
 
     @classmethod
@@ -43,7 +44,8 @@ class DeltaFetch(object):
             raise NotConfigured
         dir = data_path(s.get('DELTAFETCH_DIR', 'deltafetch'))
         reset = s.getbool('DELTAFETCH_RESET')
-        o = cls(dir, reset, crawler.stats)
+        store_redirect_url = s.getbool('DELTAFETCH_USE_REDIRECT_URL', False)
+        o = cls(dir, reset, store_redirect_url, crawler.stats)
         crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
         crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
         return o
@@ -84,9 +86,8 @@ class DeltaFetch(object):
             elif isinstance(r, (BaseItem, dict)):
                 req = response.request
                 redirect_urls = req.meta.get('redirect_urls', False)
-                store_redirect_url = spider.settings.getbool('DELTAFETCH_USE_REDIRECT_URL', False)
 
-                if store_redirect_url and redirect_urls:
+                if self.store_redirect_url and redirect_urls:
                     req = req.replace(url=redirect_urls[0])
                 key = self._get_key(req)
                 self.db[key] = str(time.time())
