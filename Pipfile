@@ -1,0 +1,12 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[dev-packages]
+tox = "*"
+pylint = "*"
+
+[packages]
+scrapy = ">=1.1.0"
+"bsddb3" = "*"

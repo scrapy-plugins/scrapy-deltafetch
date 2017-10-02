@@ -1,3 +1,7 @@
+#-*- coding: utf-8 -*-
+
+"""Scrapy Delta Fetch"""
+
 import logging
 import os
 import time
@@ -13,7 +17,6 @@ from scrapy import signals
 
 logger = logging.getLogger(__name__)
 
-
 class DeltaFetch(object):
     """
     This is a spider middleware to ignore requests to pages containing items
@@ -25,70 +28,83 @@ class DeltaFetch(object):
     intensive).
     """
 
-    def __init__(self, dir, reset=False, stats=None):
+    def __init__(self, directory, reset=False, stats=None):
         dbmodule = None
         try:
             dbmodule = __import__('bsddb3').db
         except ImportError:
             raise NotConfigured('bsddb3 is required')
         self.dbmodule = dbmodule
-        self.dir = dir
+        self.database = None
+        self.directory = directory
         self.reset = reset
         self.stats = stats
 
     @classmethod
     def from_crawler(cls, crawler):
-        s = crawler.settings
-        if not s.getbool('DELTAFETCH_ENABLED'):
+        """Load middleware settings and setup signals"""
+        settings = crawler.settings
+        if not settings.getbool('DELTAFETCH_ENABLED'):
             raise NotConfigured
-        dir = data_path(s.get('DELTAFETCH_DIR', 'deltafetch'))
-        reset = s.getbool('DELTAFETCH_RESET')
-        o = cls(dir, reset, crawler.stats)
-        crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
-        crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
-        return o
+        directory = data_path(settings.get('DELTAFETCH_DIR', 'deltafetch'))
+        reset = settings.getbool('DELTAFETCH_RESET')
+        middleware = cls(directory, reset, crawler.stats)
+        crawler.signals.connect(middleware.spider_opened, signal=signals.spider_opened)
+        crawler.signals.connect(middleware.spider_closed, signal=signals.spider_closed)
+        return middleware
 
     def spider_opened(self, spider):
-        if not os.path.exists(self.dir):
-            os.makedirs(self.dir)
-        dbpath = os.path.join(self.dir, '%s.db' % spider.name)
+        """Create database if it doesn't exist and open the handle"""
+        if not os.path.exists(self.directory):
+            os.makedirs(self.directory)
+        dbpath = os.path.join(self.directory, '%s.db' % spider.name)
         reset = self.reset or getattr(spider, 'deltafetch_reset', False)
         flag = self.dbmodule.DB_TRUNCATE if reset else self.dbmodule.DB_CREATE
         try:
-            self.db = self.dbmodule.DB()
-            self.db.open(filename=dbpath,
-                         dbtype=self.dbmodule.DB_HASH,
-                         flags=flag)
-        except Exception:
-            logger.warning("Failed to open DeltaFetch database at %s, "
-                           "trying to recreate it" % dbpath)
+            self.database = self.dbmodule.DB()
+            self.database.open(
+                filename=dbpath,
+                dbtype=self.dbmodule.DB_HASH,
+                flags=flag
+            )
+        except self.dbmodule.DBError:
+            logger.warning(
+                "Failed to open DeltaFetch database at %s, trying to recreate it",
+                dbpath
+            )
             if os.path.exists(dbpath):
                 os.remove(dbpath)
-            self.db = self.dbmodule.DB()
-            self.db.open(filename=dbpath,
-                         dbtype=self.dbmodule.DB_HASH,
-                         flags=self.dbmodule.DB_CREATE)
+            self.database = self.dbmodule.DB()
+            self.database.open(
+                filename=dbpath,
+                dbtype=self.dbmodule.DB_HASH,
+                flags=self.dbmodule.DB_CREATE
+            )
 
     def spider_closed(self, spider):
-        self.db.close()
+        """Close the database handle"""
+        if self.database:
+            self.database.close()
 
     def process_spider_output(self, response, result, spider):
-        for r in result:
-            if isinstance(r, Request):
-                key = self._get_key(r)
-                if key in self.db:
-                    logger.info("Ignoring already visited: %s" % r)
+        """Retrieve key, lookup database and skip request if key exists"""
+        for each in result:
+            if isinstance(each, Request):
+                key = self._get_key(each)
+                if key in self.database:
+                    logger.info("Ignoring already visited: %s", each)
                     if self.stats:
                         self.stats.inc_value('deltafetch/skipped', spider=spider)
                     continue
-            elif isinstance(r, (BaseItem, dict)):
+            elif isinstance(each, (BaseItem, dict)):
                 key = self._get_key(response.request)
-                self.db[key] = str(time.time())
+                self.database[key] = str(time.time())
                 if self.stats:
                     self.stats.inc_value('deltafetch/stored', spider=spider)
-            yield r
+            yield each
 
-    def _get_key(self, request):
+    @staticmethod
+    def _get_key(request):
+        """Retrieve key to use for database lookup"""
         key = request.meta.get('deltafetch_key') or request_fingerprint(request)
-        # request_fingerprint() returns `hashlib.sha1().hexdigest()`, is a string
         return to_bytes(key)

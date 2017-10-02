@@ -43,7 +43,7 @@ class DeltaFetchTestCase(TestCase):
         # path format is any,  the folder is not created
         instance = self.mwcls('/any/dir', True, stats=self.stats)
         assert isinstance(instance, self.mwcls)
-        self.assertEqual(instance.dir, '/any/dir')
+        self.assertEqual(instance.directory, '/any/dir')
         self.assertEqual(self.stats.get_stats(), {})
         self.assertEqual(instance.reset, True)
 
@@ -62,7 +62,7 @@ class DeltaFetchTestCase(TestCase):
             instance = self.mwcls.from_crawler(crawler)
             assert isinstance(instance, self.mwcls)
             self.assertEqual(
-                instance.dir, os.path.join(self.temp_dir, 'deltafetch'))
+                instance.directory, os.path.join(self.temp_dir, 'deltafetch'))
             self.assertEqual(instance.reset, False)
 
             # project_data_dir mock with advanced settings
@@ -72,7 +72,7 @@ class DeltaFetchTestCase(TestCase):
             instance = self.mwcls.from_crawler(crawler)
             assert isinstance(instance, self.mwcls)
             self.assertEqual(
-                instance.dir, os.path.join(self.temp_dir, 'other'))
+                instance.directory, os.path.join(self.temp_dir, 'other'))
             self.assertEqual(instance.reset, True)
 
     def test_spider_opened_new(self):
@@ -80,28 +80,28 @@ class DeltaFetchTestCase(TestCase):
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
         mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
-        assert not hasattr(self.mwcls, 'db')
+        assert not hasattr(self.mwcls, 'database')
         mw.spider_opened(self.spider)
         assert os.path.isdir(self.temp_dir)
         assert os.path.exists(self.db_path)
-        assert hasattr(mw, 'db')
-        assert isinstance(mw.db, type(dbmodule.db.DB()))
-        assert mw.db.items() == []
-        assert mw.db.get_type() == dbmodule.db.DB_HASH
-        assert mw.db.get_open_flags() == dbmodule.db.DB_CREATE
+        assert hasattr(mw, 'database')
+        assert isinstance(mw.database, type(dbmodule.db.DB()))
+        assert mw.database.items() == []
+        assert mw.database.get_type() == dbmodule.db.DB_HASH
+        assert mw.database.get_open_flags() == dbmodule.db.DB_CREATE
 
     def test_spider_opened_existing(self):
         """Middleware should open and use existing and valid .db files."""
         self._create_test_db()
         mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
-        assert not hasattr(self.mwcls, 'db')
+        assert not hasattr(self.mwcls, 'database')
         mw.spider_opened(self.spider)
-        assert hasattr(mw, 'db')
-        assert isinstance(mw.db, type(dbmodule.db.DB()))
-        assert mw.db.items() == [(b'test_key_1', b'test_v_1'),
+        assert hasattr(mw, 'database')
+        assert isinstance(mw.database, type(dbmodule.db.DB()))
+        assert mw.database.items() == [(b'test_key_1', b'test_v_1'),
                                  (b'test_key_2', b'test_v_2')]
-        assert mw.db.get_type() == dbmodule.db.DB_HASH
-        assert mw.db.get_open_flags() == dbmodule.db.DB_CREATE
+        assert mw.database.get_type() == dbmodule.db.DB_HASH
+        assert mw.database.get_open_flags() == dbmodule.db.DB_CREATE
 
     def test_spider_opened_corrupt_dbfile(self):
         """Middleware should create a new .db if it cannot open it."""
@@ -109,58 +109,57 @@ class DeltaFetchTestCase(TestCase):
         with open(self.db_path, "wb") as dbfile:
             dbfile.write(b'bad')
         mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
-        assert not hasattr(self.mwcls, 'db')
+        assert not hasattr(self.mwcls, 'database')
 
         # file corruption is only detected when opening spider
         mw.spider_opened(self.spider)
         assert os.path.isdir(self.temp_dir)
         assert os.path.exists(self.db_path)
-        assert hasattr(mw, 'db')
-        assert isinstance(mw.db, type(dbmodule.db.DB()))
+        assert hasattr(mw, 'database')
+        assert isinstance(mw.database, type(dbmodule.db.DB()))
 
         # and db should be empty (it was re-created)
-        assert mw.db.items() == []
-        assert mw.db.get_type() == dbmodule.db.DB_HASH
-        assert mw.db.get_open_flags() == dbmodule.db.DB_CREATE
+        assert mw.database.items() == []
+        assert mw.database.get_type() == dbmodule.db.DB_HASH
+        assert mw.database.get_open_flags() == dbmodule.db.DB_CREATE
 
     def test_spider_opened_existing_spider_reset(self):
         self._create_test_db()
         mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
-        assert not hasattr(self.mwcls, 'db')
+        assert not hasattr(self.mwcls, 'database')
         self.spider.deltafetch_reset = True
         mw.spider_opened(self.spider)
-        assert mw.db.get_open_flags() == dbmodule.db.DB_TRUNCATE
+        assert mw.database.get_open_flags() == dbmodule.db.DB_TRUNCATE
 
     def test_spider_opened_reset_non_existing_db(self):
         mw = self.mwcls(self.temp_dir, reset=True, stats=self.stats)
-        assert not hasattr(self.mwcls, 'db')
+        assert not hasattr(self.mwcls, 'database')
         self.spider.deltafetch_reset = True
         mw.spider_opened(self.spider)
-        assert mw.db.fd()
+        assert mw.database.fd()
         # there's different logic for different bdb versions:
         # it can fail when opening a non-existing db with truncate flag,
         # then it should be caught and retried with rm & create flag
-        assert (mw.db.get_open_flags() == dbmodule.db.DB_CREATE or
-                mw.db.get_open_flags() == dbmodule.db.DB_TRUNCATE)
+        assert (mw.database.get_open_flags() == dbmodule.db.DB_CREATE or
+                mw.database.get_open_flags() == dbmodule.db.DB_TRUNCATE)
 
     def test_spider_opened_recreate(self):
         self._create_test_db()
         mw = self.mwcls(self.temp_dir, reset=True, stats=self.stats)
-        assert not hasattr(self.mwcls, 'db')
+        assert not hasattr(self.mwcls, 'database')
         mw.spider_opened(self.spider)
-        assert hasattr(mw, 'db')
-        assert isinstance(mw.db, type(dbmodule.db.DB()))
-        assert mw.db.items() == []
-        assert mw.db.get_type() == dbmodule.db.DB_HASH
-        assert mw.db.get_open_flags() == dbmodule.db.DB_TRUNCATE
+        assert hasattr(mw, 'database')
+        assert isinstance(mw.database, type(dbmodule.db.DB()))
+        assert mw.database.items() == []
+        assert mw.database.get_type() == dbmodule.db.DB_HASH
+        assert mw.database.get_open_flags() == dbmodule.db.DB_TRUNCATE
 
     def test_spider_closed(self):
         self._create_test_db()
         mw = self.mwcls(self.temp_dir, reset=True, stats=self.stats)
         mw.spider_opened(self.spider)
-        assert mw.db.fd()
+        assert mw.database.fd()
         mw.spider_closed(self.spider)
-        self.assertRaises(dbmodule.db.DBError, mw.db.fd)
 
     def test_process_spider_output(self):
         self._create_test_db()
@@ -187,7 +186,7 @@ class DeltaFetchTestCase(TestCase):
         self.assertEqual(self.stats.get_stats(), {'deltafetch/skipped': 1})
 
         # b'key' should not be in the db yet as no item was collected yet
-        self.assertEqual(set(mw.db.keys()),
+        self.assertEqual(set(mw.database.keys()),
                          set([b'test_key_1',
                               b'test_key_2']))
 
@@ -195,11 +194,11 @@ class DeltaFetchTestCase(TestCase):
         result = [BaseItem(), "not a base item"]
         self.assertEqual(list(mw.process_spider_output(
             response, result, self.spider)), result)
-        self.assertEqual(set(mw.db.keys()),
+        self.assertEqual(set(mw.database.keys()),
                          set([b'key',
                               b'test_key_1',
                               b'test_key_2']))
-        assert mw.db[b'key']
+        assert mw.database[b'key']
 
     def test_process_spider_output_dict(self):
         self._create_test_db()
@@ -211,11 +210,11 @@ class DeltaFetchTestCase(TestCase):
         result = [{"somekey": "somevalue"}]
         self.assertEqual(list(mw.process_spider_output(
             response, result, self.spider)), result)
-        self.assertEqual(set(mw.db.keys()),
+        self.assertEqual(set(mw.database.keys()),
                          set([b'key',
                               b'test_key_1',
                               b'test_key_2']))
-        assert mw.db[b'key']
+        assert mw.database[b'key']
 
     def test_process_spider_output_stats(self):
         self._create_test_db()
@@ -244,8 +243,8 @@ class DeltaFetchTestCase(TestCase):
         # test with subclass not handling passed stats
         class LegacyDeltaFetchSubClass(self.mwcls):
 
-            def __init__(self, dir, reset=False, *args, **kwargs):
-                super(LegacyDeltaFetchSubClass, self).__init__(dir=dir, reset=reset)
+            def __init__(self, directory, reset=False, *args, **kwargs):
+                super(LegacyDeltaFetchSubClass, self).__init__(directory=directory, reset=reset)
                 self.something = True
 
         crawler = mock.Mock()
@@ -263,7 +262,7 @@ class DeltaFetchTestCase(TestCase):
             instance = LegacyDeltaFetchSubClass.from_crawler(crawler)
             assert isinstance(instance, self.mwcls)
             self.assertEqual(
-                instance.dir, os.path.join(self.temp_dir, 'deltafetch'))
+                instance.directory, os.path.join(self.temp_dir, 'deltafetch'))
             self.assertEqual(instance.reset, False)
 
             # project_data_dir mock with advanced settings
@@ -273,7 +272,7 @@ class DeltaFetchTestCase(TestCase):
             instance = LegacyDeltaFetchSubClass.from_crawler(crawler)
             assert isinstance(instance, self.mwcls)
             self.assertEqual(
-                instance.dir, os.path.join(self.temp_dir, 'other'))
+                instance.directory, os.path.join(self.temp_dir, 'other'))
             self.assertEqual(instance.reset, True)
 
     def test_process_spider_output_stats_legacy(self):
@@ -281,8 +280,8 @@ class DeltaFetchTestCase(TestCase):
         # (i.e. that trying to update stats does not trigger exception)
         class LegacyDeltaFetchSubClass(self.mwcls):
 
-            def __init__(self, dir, reset=False, *args, **kwargs):
-                super(LegacyDeltaFetchSubClass, self).__init__(dir=dir, reset=reset)
+            def __init__(self, directory, reset=False, *args, **kwargs):
+                super(LegacyDeltaFetchSubClass, self).__init__(directory=directory, reset=reset)
                 self.something = True
 
         self._create_test_db()
