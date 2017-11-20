@@ -88,3 +88,8 @@ Supported Scrapy request meta keys
   more efficient for sites that many URLs for the same item.
 
 
+* ``request_need_deltafetch`` — force current request to be stored by deltafetch
+
+Example::
+
+    yield scrapy.Request(detail_url, self.parse_level2_pages, meta={'request_need_deltafetch':True})
