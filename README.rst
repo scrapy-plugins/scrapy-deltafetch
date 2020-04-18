@@ -47,7 +47,7 @@ Configuration
    Here, priority ``100`` is just an example.
    Set its value depending on other middlewares you may have enabled already.
 
-2. Enable the middleware using ``DELTAFETCH_ENABLED`` in your ``setting.py``::
+2. Enable the middleware using ``DELTAFETCH_ENABLED`` in your ``settings.py``::
 
       DELTAFETCH_ENABLED = True
 
