@@ -3,7 +3,7 @@ import os
 import time
 
 from scrapy.http import Request
-from scrapy.item import BaseItem
+from scrapy.item import Item
 from scrapy.utils.request import request_fingerprint
 from scrapy.utils.project import data_path
 from scrapy.utils.python import to_bytes
@@ -81,7 +81,7 @@ class DeltaFetch(object):
                     if self.stats:
                         self.stats.inc_value('deltafetch/skipped', spider=spider)
                     continue
-            elif isinstance(r, (BaseItem, dict)):
+            elif isinstance(r, (Item, dict)):
                 key = self._get_key(response.request)
                 self.db[key] = str(time.time())
                 if self.stats:
