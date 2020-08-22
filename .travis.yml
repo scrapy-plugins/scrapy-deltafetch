@@ -21,7 +21,7 @@ addons:
 
 install: pip install -U tox codecov
 
-script: tox
+script: tox -e $TOX_ENV
 
 after_success:
   - codecov
