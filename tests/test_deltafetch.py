@@ -4,7 +4,7 @@ import os
 import mock
 import tempfile
 from scrapy import Request
-from scrapy.item import BaseItem
+from scrapy.item import Item
 from scrapy.spiders import Spider
 from scrapy.settings import Settings
 from scrapy.exceptions import NotConfigured
@@ -192,7 +192,7 @@ class DeltaFetchTestCase(TestCase):
                               b'test_key_2']))
 
         # if the spider returns items, the request's key is added in db
-        result = [BaseItem(), "not a base item"]
+        result = [Item(), "not an item"]
         self.assertEqual(list(mw.process_spider_output(
             response, result, self.spider)), result)
         self.assertEqual(set(mw.db.keys()),
@@ -235,7 +235,7 @@ class DeltaFetchTestCase(TestCase):
         self.assertEqual(list(mw.process_spider_output(
             response, result, self.spider)), [result[0]])
         self.assertEqual(self.stats.get_value('deltafetch/skipped'), 1)
-        result = [BaseItem(), "not a base item"]
+        result = [Item(), "not a item"]
         self.assertEqual(list(mw.process_spider_output(
             response, result, self.spider)), result)
         self.assertEqual(self.stats.get_value('deltafetch/stored'), 1)
@@ -305,7 +305,7 @@ class DeltaFetchTestCase(TestCase):
             response, result, self.spider)), [result[0]])
         self.assertEqual(self.stats.get_value('deltafetch/skipped'), None)
 
-        result = [BaseItem(), "not a base item"]
+        result = [Item(), "not an item"]
         self.assertEqual(list(mw.process_spider_output(
             response, result, self.spider)), result)
         self.assertEqual(self.stats.get_value('deltafetch/stored'), None)
