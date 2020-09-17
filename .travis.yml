@@ -1,24 +1,30 @@
 language: python
-python: 3.5
 
 sudo: false
 
-env:
-  matrix:
-  - TOXENV=py27
-  - TOXENV=py35
+matrix:
+  include:
+    - python: 3.6
+      env:
+        - TOX_ENV=py36
+    - python: 3.7
+      env:
+        - TOX_ENV=py37
+    - python: 3.8
+      env:
+        - TOX_ENV=py38
 
 addons:
   apt:
     packages:
-    - libdb-dev
+      - libdb-dev
 
 install: pip install -U tox codecov
 
-script: tox
+script: tox -e $TOX_ENV
 
 after_success:
-- codecov
+  - codecov
 
 deploy:
   provider: pypi
@@ -29,4 +35,4 @@ deploy:
   on:
     tags: true
     repo: scrapy-plugins/scrapy-deltafetch
-    condition: $TOXENV = py35
+    condition: $TOXENV = py38
