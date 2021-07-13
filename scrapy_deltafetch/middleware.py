@@ -76,7 +76,7 @@ class DeltaFetch(object):
         for r in result:
             if isinstance(r, Request):
                 key = self._get_key(r)
-                if key in self.db:
+                if key in self.db and not self._is_ignored(r):
                     logger.info("Ignoring already visited: %s" % r)
                     if self.stats:
                         self.stats.inc_value('deltafetch/skipped', spider=spider)
@@ -92,3 +92,6 @@ class DeltaFetch(object):
         key = request.meta.get('deltafetch_key') or request_fingerprint(request)
         # request_fingerprint() returns `hashlib.sha1().hexdigest()`, is a string
         return to_bytes(key)
+
+    def _is_ignored(self, request):
+        return request.meta.get('deltafetch_ignore', False)
