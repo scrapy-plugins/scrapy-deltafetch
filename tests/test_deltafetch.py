@@ -183,6 +183,32 @@ class DeltaFetchTestCase(TestCase):
                               b'test_key_2']))
         assert mw.db[b'key']
 
+    def test_process_spider_output_with_ignored_request(self):
+        self._create_test_db()
+        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        mw.spider_opened(self.spider)
+        response = mock.Mock()
+        response.request = Request('http://url')
+        result = []
+        self.assertEqual(
+            list(mw.process_spider_output(response, result, self.spider)), [])
+        result = [
+            # same URL but with new key --> it should be processed
+            Request('http://url', meta={'deltafetch_ignore': True}),
+
+            # 'test_key_1' is already in the test db, but deltafetch_ignore
+            # flag is set --> it should be processed
+            Request('http://url1',
+                    meta={
+                        'deltafetch_key': 'test_key_1',
+                        'deltafetch_ignore': True
+                    })
+        ]
+        # so 2 requests should go through
+        self.assertEqual(
+            list(mw.process_spider_output(response, result, self.spider)),
+            [result[0], result[1]])
+
     def test_process_spider_output_dict(self):
         self._create_test_db()
         mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
