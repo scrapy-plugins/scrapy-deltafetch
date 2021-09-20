@@ -1,12 +1,22 @@
 =================
 scrapy-deltafetch
 =================
+  
+.. image:: https://github.com/scrapy-plugins/scrapy-deltafetch/workflows/CI/badge.svg
+   :target: https://github.com/scrapy-plugins/scrapy-deltafetch/actions
 
-.. image:: https://travis-ci.org/scrapy-plugins/scrapy-deltafetch.svg?branch=master
-    :target: https://travis-ci.org/scrapy-plugins/scrapy-deltafetch
+.. image:: https://img.shields.io/pypi/pyversions/scrapy-deltafetch.svg
+    :target: https://pypi.python.org/pypi/scrapy-deltafetch
 
-.. image:: https://codecov.io/gh/scrapy-plugins/scrapy-deltafetch/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/scrapy-plugins/scrapy-deltafetch
+.. image:: https://img.shields.io/pypi/v/scrapy-deltafetch.svg
+    :target: https://pypi.python.org/pypi/scrapy-deltafetch
+
+.. image:: https://img.shields.io/pypi/l/scrapy-deltafetch.svg
+    :target: https://pypi.python.org/pypi/scrapy-deltafetch
+
+.. image:: https://img.shields.io/pypi/dm/scrapy-deltafetch.svg
+   :target: https://pypistats.org/packages/scrapy-deltafetch
+   :alt: Downloads count
 
 This is a Scrapy spider middleware to ignore requests
 to pages seen in previous crawls of the same spider,
