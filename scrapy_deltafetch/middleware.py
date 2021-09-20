@@ -40,7 +40,6 @@ class DeltaFetch(object):
         reset = s.getbool('DELTAFETCH_RESET')
         o = cls(dir, reset, crawler.stats)
         crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
-        # request_fingerprint() returns `hashlib.sha1().hexdigest()`, is a string
         crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
         return o
 
@@ -67,7 +66,7 @@ class DeltaFetch(object):
         for r in result:
             if isinstance(r, Request):
                 key = self._get_key(r)
-                if key in self.db:
+                if key in self.db and self._is_enabled_for_request(r):
                     logger.info("Ignoring already visited: %s" % r)
                     if self.stats:
                         self.stats.inc_value('deltafetch/skipped', spider=spider)
@@ -82,3 +81,7 @@ class DeltaFetch(object):
     def _get_key(self, request):
         key = request.meta.get('deltafetch_key') or request_fingerprint(request)
         return to_bytes(key)
+
+    def _is_enabled_for_request(self, request):
+        # Gives you option to disable deltafetch for some requests
+        return request.meta.get('deltafetch_enabled', True)
