@@ -9,21 +9,16 @@ scrapy-deltafetch
   :target: https://codecov.io/gh/scrapy-plugins/scrapy-deltafetch
 
 This is a Scrapy spider middleware to ignore requests
-to pages containing items seen in previous crawls of the same spider,
-thus producing a "delta crawl" containing only new items.
+to pages seen in previous crawls of the same spider,
+thus producing a "delta crawl" containing only new requests.
 
 This also speeds up the crawl, by reducing the number of requests that need
 to be crawled, and processed (typically, item requests are the most CPU
 intensive).
 
-Requirements
-============
+DeltaFetch middleware uses Python's dbm_ package to store requests fingerprints.
 
-DeltaFetch middleware depends on Python's bsddb3_ package.
-
-On Ubuntu/Debian, you may need to install ``libdb-dev`` if it's not installed already.
-
-.. _bsddb3: https://pypi.python.org/pypi/bsddb3
+.. _dbm: https://docs.python.org/3/library/dbm.html
 
 
 Installation
