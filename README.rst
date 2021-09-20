@@ -82,4 +82,7 @@ Supported Scrapy request meta keys
   This requires support from the spider, but makes the extension
   more efficient for sites that many URLs for the same item.
 
+* ``deltafetch_enabled`` - if set to False it will disable deltafetch for some
+  specific request
+
 

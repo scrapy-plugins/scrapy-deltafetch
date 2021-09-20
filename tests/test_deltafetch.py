@@ -193,15 +193,12 @@ class DeltaFetchTestCase(TestCase):
         self.assertEqual(
             list(mw.process_spider_output(response, result, self.spider)), [])
         result = [
-            # same URL but with new key --> it should be processed
-            Request('http://url', meta={'deltafetch_ignore': True}),
-
-            # 'test_key_1' is already in the test db, but deltafetch_ignore
-            # flag is set --> it should be processed
+            Request('http://url1'),
+            # 'url1' is already in the db, but deltafetch_enabled=False
+            # flag is set, URL should be processed.
             Request('http://url1',
                     meta={
-                        'deltafetch_key': 'test_key_1',
-                        'deltafetch_ignore': True
+                        'deltafetch_enabled': False
                     })
         ]
         # so 2 requests should go through
