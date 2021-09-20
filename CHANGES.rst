@@ -1,5 +1,13 @@
 Changes
 =======
+2.0.0 (2021-09-20)
+------------------
+* drop Python 2 support
+* replace bsddb3 with Python's dbm for storing request fingerprints
+* minor README fix
+* option to disable deltafetch for some requests with
+deltafetch_enabled=False request meta key
+* dev workflow: changed from Travis to Github Actions
 
 1.2.1 (2017-02-09)
 ------------------
