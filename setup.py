@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='scrapy-deltafetch',
-    version='2.1.0',
+    version='2.0.1',
     license='BSD',
     description='Scrapy middleware to ignore previously crawled pages',
     long_description=open('README.rst').read(),
