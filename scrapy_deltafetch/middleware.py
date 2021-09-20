@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import dbm
 
 from scrapy.http import Request
 from scrapy.item import Item
@@ -26,12 +27,6 @@ class DeltaFetch(object):
     """
 
     def __init__(self, dir, reset=False, stats=None):
-        dbmodule = None
-        try:
-            dbmodule = __import__('bsddb3').db
-        except ImportError:
-            raise NotConfigured('bsddb3 is required')
-        self.dbmodule = dbmodule
         self.dir = dir
         self.reset = reset
         self.stats = stats
@@ -45,29 +40,25 @@ class DeltaFetch(object):
         reset = s.getbool('DELTAFETCH_RESET')
         o = cls(dir, reset, crawler.stats)
         crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
+        # request_fingerprint() returns `hashlib.sha1().hexdigest()`, is a string
         crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
         return o
 
     def spider_opened(self, spider):
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
+        # TODO may be tricky, as there may be different paths on systems
         dbpath = os.path.join(self.dir, '%s.db' % spider.name)
         reset = self.reset or getattr(spider, 'deltafetch_reset', False)
-        flag = self.dbmodule.DB_TRUNCATE if reset else self.dbmodule.DB_CREATE
+        flag = 'n' if reset else 'c'
         try:
-            self.db = self.dbmodule.DB()
-            self.db.open(filename=dbpath,
-                         dbtype=self.dbmodule.DB_HASH,
-                         flags=flag)
+            self.db = dbm.open(dbpath, flag=flag)
         except Exception:
             logger.warning("Failed to open DeltaFetch database at %s, "
                            "trying to recreate it" % dbpath)
             if os.path.exists(dbpath):
                 os.remove(dbpath)
-            self.db = self.dbmodule.DB()
-            self.db.open(filename=dbpath,
-                         dbtype=self.dbmodule.DB_HASH,
-                         flags=self.dbmodule.DB_CREATE)
+            self.db = dbm.open(dbpath, 'c')
 
     def spider_closed(self, spider):
         self.db.close()
@@ -90,7 +81,6 @@ class DeltaFetch(object):
 
     def _get_key(self, request):
         key = request.meta.get('deltafetch_key') or request_fingerprint(request)
-        # request_fingerprint() returns `hashlib.sha1().hexdigest()`, is a string
         return to_bytes(key)
 
     def _is_ignored(self, request):

@@ -1,6 +1,7 @@
 from unittest import TestCase, skipIf
 
 import os
+import dbm
 import mock
 import tempfile
 from scrapy import Request
@@ -16,14 +17,6 @@ from scrapy.utils.test import get_crawler
 from scrapy_deltafetch.middleware import DeltaFetch
 
 
-dbmodule = None
-try:
-    dbmodule = __import__('bsddb3')
-except ImportError:
-    pass
-
-
-@skipIf(not dbmodule, "bsddb3 is not found on the system")
 class DeltaFetchTestCase(TestCase):
 
     mwcls = DeltaFetch
@@ -85,10 +78,7 @@ class DeltaFetchTestCase(TestCase):
         assert os.path.isdir(self.temp_dir)
         assert os.path.exists(self.db_path)
         assert hasattr(mw, 'db')
-        assert isinstance(mw.db, type(dbmodule.db.DB()))
-        assert mw.db.items() == []
-        assert mw.db.get_type() == dbmodule.db.DB_HASH
-        assert mw.db.get_open_flags() == dbmodule.db.DB_CREATE
+        assert mw.db.keys() == []
 
     def test_spider_opened_existing(self):
         """Middleware should open and use existing and valid .db files."""
@@ -97,11 +87,11 @@ class DeltaFetchTestCase(TestCase):
         assert not hasattr(self.mwcls, 'db')
         mw.spider_opened(self.spider)
         assert hasattr(mw, 'db')
-        assert isinstance(mw.db, type(dbmodule.db.DB()))
-        assert mw.db.items() == [(b'test_key_1', b'test_v_1'),
-                                 (b'test_key_2', b'test_v_2')]
-        assert mw.db.get_type() == dbmodule.db.DB_HASH
-        assert mw.db.get_open_flags() == dbmodule.db.DB_CREATE
+        for k, v in [
+            (b'test_key_1', b'test_v_1'),
+            (b'test_key_2', b'test_v_2')
+        ]:
+            assert mw.db.get(k) == v
 
     def test_spider_opened_corrupt_dbfile(self):
         """Middleware should create a new .db if it cannot open it."""
@@ -116,12 +106,9 @@ class DeltaFetchTestCase(TestCase):
         assert os.path.isdir(self.temp_dir)
         assert os.path.exists(self.db_path)
         assert hasattr(mw, 'db')
-        assert isinstance(mw.db, type(dbmodule.db.DB()))
 
         # and db should be empty (it was re-created)
-        assert mw.db.items() == []
-        assert mw.db.get_type() == dbmodule.db.DB_HASH
-        assert mw.db.get_open_flags() == dbmodule.db.DB_CREATE
+        assert mw.db.keys() == []
 
     def test_spider_opened_existing_spider_reset(self):
         self._create_test_db()
@@ -129,38 +116,33 @@ class DeltaFetchTestCase(TestCase):
         assert not hasattr(self.mwcls, 'db')
         self.spider.deltafetch_reset = True
         mw.spider_opened(self.spider)
-        assert mw.db.get_open_flags() == dbmodule.db.DB_TRUNCATE
+        assert mw.db.keys() == []
 
     def test_spider_opened_reset_non_existing_db(self):
         mw = self.mwcls(self.temp_dir, reset=True, stats=self.stats)
         assert not hasattr(self.mwcls, 'db')
         self.spider.deltafetch_reset = True
         mw.spider_opened(self.spider)
-        assert mw.db.fd()
-        # there's different logic for different bdb versions:
-        # it can fail when opening a non-existing db with truncate flag,
-        # then it should be caught and retried with rm & create flag
-        assert (mw.db.get_open_flags() == dbmodule.db.DB_CREATE or
-                mw.db.get_open_flags() == dbmodule.db.DB_TRUNCATE)
-
+        assert mw.db.get(b'random') is None
+        
     def test_spider_opened_recreate(self):
         self._create_test_db()
         mw = self.mwcls(self.temp_dir, reset=True, stats=self.stats)
         assert not hasattr(self.mwcls, 'db')
         mw.spider_opened(self.spider)
         assert hasattr(mw, 'db')
-        assert isinstance(mw.db, type(dbmodule.db.DB()))
-        assert mw.db.items() == []
-        assert mw.db.get_type() == dbmodule.db.DB_HASH
-        assert mw.db.get_open_flags() == dbmodule.db.DB_TRUNCATE
+        assert mw.db.keys() == []
 
     def test_spider_closed(self):
         self._create_test_db()
         mw = self.mwcls(self.temp_dir, reset=True, stats=self.stats)
         mw.spider_opened(self.spider)
-        assert mw.db.fd()
+        assert mw.db.get('random') is None
         mw.spider_closed(self.spider)
-        self.assertRaises(dbmodule.db.DBError, mw.db.fd)
+        with self.assertRaises(Exception) as cm:
+            # should fail because database closed
+            mw.db.get('radom')
+        # self.assertRaisesRegex(, mw.db.get('random'))
 
     def test_process_spider_output(self):
         self._create_test_db()
@@ -349,10 +331,8 @@ class DeltaFetchTestCase(TestCase):
         self.assertEqual(mw._get_key(test_req3), b'dfkey1')
 
     def _create_test_db(self):
-        db = dbmodule.db.DB()
         # truncate test db if there were failed tests
-        db.open(self.db_path, dbmodule.db.DB_HASH,
-                dbmodule.db.DB_CREATE | dbmodule.db.DB_TRUNCATE)
+        db = dbm.open(self.db_path, 'n')
         db[b'test_key_1'] = b'test_v_1'
         db[b'test_key_2'] = b'test_v_2'
         db.close()
