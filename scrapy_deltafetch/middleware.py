@@ -37,7 +37,13 @@ class DeltaFetch(object):
         if not s.getbool('DELTAFETCH_ENABLED'):
             raise NotConfigured
         dir = data_path(s.get('DELTAFETCH_DIR', 'deltafetch'))
-        reset = s.getbool('DELTAFETCH_RESET')
+
+        # DELTAFETCH_RESET can be bool (for all spiders) or str of specific spider name
+        try:
+            reset = s.getbool('DELTAFETCH_RESET')
+        except ValueError:
+            reset = s.get('DELTAFETCH_RESET')
+
         o = cls(dir, reset, crawler.stats)
         crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
         crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
@@ -49,7 +55,7 @@ class DeltaFetch(object):
         # TODO may be tricky, as there may be different paths on systems
         dbpath = os.path.join(self.dir, '%s.db' % spider.name)
         reset = self.reset or getattr(spider, 'deltafetch_reset', False)
-        flag = 'n' if reset else 'c'
+        flag = 'n' if reset is True or reset == spider.name else 'c'
         try:
             self.db = dbm.open(dbpath, flag=flag)
         except Exception:
