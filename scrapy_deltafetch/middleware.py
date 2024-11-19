@@ -5,7 +5,7 @@ import dbm
 
 from scrapy.http import Request
 from scrapy.item import Item
-from scrapy.utils.request import request_fingerprint
+from scrapy.utils.request import fingerprint
 from scrapy.utils.project import data_path
 from scrapy.utils.python import to_bytes
 from scrapy.exceptions import NotConfigured
@@ -79,7 +79,7 @@ class DeltaFetch(object):
             yield r
 
     def _get_key(self, request):
-        key = request.meta.get('deltafetch_key') or request_fingerprint(request)
+        key = request.meta.get('deltafetch_key') or fingerprint(request)
         return to_bytes(key)
 
     def _is_enabled_for_request(self, request):
