@@ -5,7 +5,7 @@ import dbm
 
 from scrapy.http import Request
 from scrapy.item import Item
-from scrapy.utils.request import request_fingerprint
+from scrapy.utils.request import RequestFingerprinter
 from scrapy.utils.project import data_path
 from scrapy.utils.python import to_bytes
 from scrapy.exceptions import NotConfigured
@@ -26,10 +26,11 @@ class DeltaFetch(object):
     intensive).
     """
 
-    def __init__(self, dir, reset=False, stats=None):
+    def __init__(self, dir, reset=False, stats=None, crawler=None):
         self.dir = dir
         self.reset = reset
         self.stats = stats
+        self.fingerprint=RequestFingerprinter(crawler).fingerprint
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -38,7 +39,7 @@ class DeltaFetch(object):
             raise NotConfigured
         dir = data_path(s.get('DELTAFETCH_DIR', 'deltafetch'))
         reset = s.getbool('DELTAFETCH_RESET')
-        o = cls(dir, reset, crawler.stats)
+        o = cls(dir, reset, crawler.stats, crawler)
         crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
         crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
         return o
@@ -79,7 +80,7 @@ class DeltaFetch(object):
             yield r
 
     def _get_key(self, request):
-        key = request.meta.get('deltafetch_key') or request_fingerprint(request)
+        key = request.meta.get('deltafetch_key') or self.fingerprint(request)
         return to_bytes(key)
 
     def _is_enabled_for_request(self, request):

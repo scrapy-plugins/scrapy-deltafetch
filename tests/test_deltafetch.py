@@ -9,7 +9,7 @@ from scrapy.item import Item
 from scrapy.spiders import Spider
 from scrapy.settings import Settings
 from scrapy.exceptions import NotConfigured
-from scrapy.utils.request import request_fingerprint
+from scrapy.utils.request import RequestFingerprinter
 from scrapy.utils.python import to_bytes
 from scrapy.statscollectors import StatsCollector
 from scrapy.utils.test import get_crawler
@@ -318,8 +318,10 @@ class DeltaFetchTestCase(TestCase):
     def test_get_key(self):
         mw = self.mwcls(self.temp_dir, reset=True)
         test_req1 = Request('http://url1')
+        crawler = get_crawler(Spider)
+        fingerprint=RequestFingerprinter(crawler).fingerprint
         self.assertEqual(mw._get_key(test_req1),
-                         to_bytes(request_fingerprint(test_req1)))
+                         to_bytes(fingerprint(test_req1)))
         test_req2 = Request('http://url2', meta={'deltafetch_key': b'dfkey1'})
         self.assertEqual(mw._get_key(test_req2), b'dfkey1')
 
