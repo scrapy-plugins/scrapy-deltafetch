@@ -30,7 +30,17 @@ class DeltaFetch(object):
         self.dir = dir
         self.reset = reset
         self.stats = stats
-        self.fingerprint=RequestFingerprinter(crawler).fingerprint
+        if crawler and hasattr(crawler, 'request_fingerprinter'):
+            self.fingerprint=crawler.request_fingerprinter.fingerprint
+        else:
+            try:
+                # compatibility with Scrapy <2.7.0
+                from scrapy.utils.request import request_fingerprint
+                self.fingerprint=request_fingerprint
+            except ImportError:
+                # use the new default 
+                from scrapy.utils.request import fingerprint
+                self.fingerprint=fingerprint
 
     @classmethod
     def from_crawler(cls, crawler):
