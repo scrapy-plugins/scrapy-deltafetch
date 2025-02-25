@@ -27,6 +27,24 @@ dependencies = ["Scrapy>=1.1.0"]
 [project.urls]
 Homepage = "http://github.com/scrapy-plugins/scrapy-deltafetch"
 
+[tool.bumpversion]
+current_version = "2.0.1"
+commit = true
+tag = true
+
+[[tool.bumpversion.files]]
+filename = 'CHANGES.rst'
+search = "\\(unreleased\\)$"
+replace = "({now:%Y-%m-%d})"
+regex = true
+
+[[tool.bumpversion.files]]
+search = "version = \"{current_version}\""
+filename = "pyproject.toml"
+
+[[tool.bumpversion.files]]
+filename = "scrapy_deltafetch/__init__.py"
+
 [tool.coverage.run]
 branch = true
 include = ["scrapy_deltafetch/*"]
