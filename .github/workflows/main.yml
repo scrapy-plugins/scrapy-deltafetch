@@ -1,47 +1,37 @@
 name: CI
-
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
+on: [push, pull_request]
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
         - python-version: "3.9"
+          toxenv: min
+        - python-version: "3.9"
         - python-version: "3.10"
         - python-version: "3.11"
         - python-version: "3.12"
         - python-version: "3.13"
-
+        - python-version: "3.13"
+          toxenv: pre-commit
+        - python-version: "3.13"
+          toxenv: mypy
+        - python-version: "3.13"
+          toxenv: pylint
+        - python-version: "3.13"
+          toxenv: twinecheck
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: libddb
       run: |
         sudo apt-get install libdb-dev
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Cache pip
-      uses: actions/cache@v2
-      with:
-         path: ~/.cache/pip
-         key: ${{ runner.os}}-pip-${{ hashFiles('tests/requirements-test.txt') }}
-         restore-keys: |
-           ${{  runner.os}}-pip-
-           ${{ runner.os}}-
-    - name: Install dependencies
+    - name: Run
       run: |
-        python -m pip install --upgrade pip
-        pip install -r tests/requirements-test.txt
-    - name: Test with pytest
-      run: |
-        pytest
+        pip install -U tox
+        tox -e ${{ matrix.toxenv }}

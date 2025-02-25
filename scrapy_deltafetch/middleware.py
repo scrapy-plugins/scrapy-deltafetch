@@ -6,7 +6,6 @@ from pathlib import Path
 from scrapy import signals
 from scrapy.exceptions import NotConfigured
 from scrapy.http import Request
-from scrapy.item import Item
 from scrapy.utils.project import data_path
 from scrapy.utils.python import to_bytes
 
@@ -36,6 +35,8 @@ class DeltaFetch:
         dir = data_path(s.get("DELTAFETCH_DIR", "deltafetch"))
         reset = s.getbool("DELTAFETCH_RESET")
         o = cls(dir, reset, crawler.stats)
+        if o.stats is None:
+            o.stats = crawler.stats
         crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
         crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
 
@@ -56,14 +57,14 @@ class DeltaFetch:
         reset = self.reset or getattr(spider, "deltafetch_reset", False)
         flag = "n" if reset else "c"
         try:
-            self.db = dbm.open(dbpath, flag=flag)  # noqa: SIM115
+            self.db = dbm.open(str(dbpath), flag=flag)  # noqa: SIM115
         except Exception:
             logger.warning(
                 f"Failed to open DeltaFetch database at {dbpath}, trying to recreate it"
             )
             if dbpath.exists():
                 dbpath.unlink()
-            self.db = dbm.open(dbpath, "c")  # noqa: SIM115
+            self.db = dbm.open(str(dbpath), "c")  # noqa: SIM115
 
     def spider_closed(self, spider):  # noqa: D102
         self.db.close()
@@ -77,7 +78,7 @@ class DeltaFetch:
                     if self.stats:
                         self.stats.inc_value("deltafetch/skipped", spider=spider)
                     continue
-            elif isinstance(r, (Item, dict)):
+            else:
                 key = self._get_key(response.request)
                 self.db[key] = str(time.time())
                 if self.stats:

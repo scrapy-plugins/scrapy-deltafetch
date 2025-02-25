@@ -1,3 +1,74 @@
+[tool.coverage.run]
+branch = true
+include = ["scrapy_deltafetch/*"]
+omit = ["tests/*"]
+disable_warnings = ["include-ignored"]
+
+[tool.coverage.paths]
+source = [
+    "scrapy_deltafetch",
+    ".tox/**/site-packages/scrapy-deltafetch"
+]
+
+[tool.coverage.report]
+# https://github.com/nedbat/coveragepy/issues/831#issuecomment-517778185
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
+
+
+
+[tool.pylint.MASTER]
+persistent = "no"
+jobs = 1          # >1 hides results
+
+[tool.pylint."MESSAGES CONTROL"]
+enable = [
+    "useless-suppression",
+]
+disable = [
+    # Ones we want to ignore
+    "attribute-defined-outside-init",
+    "broad-exception-caught",
+    "consider-using-with",
+    "cyclic-import",
+    "disallowed-name",
+    "duplicate-code",  # https://github.com/pylint-dev/pylint/issues/214
+    "fixme",
+    "import-outside-toplevel",
+    "inherit-non-class",  # false positives with create_deprecated_class()
+    "invalid-name",
+    "invalid-overridden-method",
+    "isinstance-second-argument-not-valid-type",  # false positives with create_deprecated_class()
+    "line-too-long",
+    "logging-format-interpolation",
+    "logging-fstring-interpolation",
+    "logging-not-lazy",
+    "missing-docstring",
+    "no-member",
+    "no-name-in-module",  # caught by mypy already
+    "no-value-for-parameter",  # https://github.com/pylint-dev/pylint/issues/3268
+    "not-callable",
+    "protected-access",
+    "redefined-builtin",
+    "redefined-outer-name",
+    "too-few-public-methods",
+    "too-many-ancestors",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-function-args",
+    "too-many-instance-attributes",
+    "too-many-lines",
+    "too-many-locals",
+    "too-many-positional-arguments",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "unused-argument",
+    "unused-import",
+    "unused-variable",
+    "useless-import-alias",  # used as a hint to mypy
+    "useless-return",  # https://github.com/pylint-dev/pylint/issues/6530
+    "wrong-import-position",
+]
+
 [tool.ruff.lint]
 extend-select = [
     # flake8-bugbear
@@ -103,3 +174,6 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # D102: Missing docstring in public method
 "tests/**" = ["D102"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"

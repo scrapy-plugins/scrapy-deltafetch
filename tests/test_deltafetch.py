@@ -1,5 +1,6 @@
 import dbm
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from unittest import TestCase, mock
 
@@ -9,18 +10,8 @@ from scrapy.exceptions import NotConfigured
 from scrapy.item import Item
 from scrapy.settings import Settings
 from scrapy.spiders import Spider
-from scrapy.statscollectors import StatsCollector
 from scrapy.utils.python import to_bytes
 from scrapy.utils.test import get_crawler
-
-try:
-    from scrapy.utils.request import request_fingerprint
-
-    _legacy_fingerprint = True
-except ImportError:
-    from scrapy.utils.request import RequestFingerprinter
-
-    _legacy_fingerprint = False
 
 from scrapy_deltafetch.middleware import DeltaFetch
 
@@ -36,15 +27,23 @@ class DeltaFetchTestCase(TestCase):
         self.temp_dir = Path(tempfile.gettempdir())
         self.db_path = self.temp_dir / f"{self.spider.name}.db"
 
-        crawler = get_crawler(Spider)
-        self.stats = StatsCollector(crawler)
+    def get_mw(self, dir=None, reset=None, cls=DeltaFetch):
+        settings = {
+            "DELTAFETCH_ENABLED": True,
+        }
+        if dir is not None:
+            settings["DELTAFETCH_DIR"] = dir
+        if reset is not None:
+            settings["DELTAFETCH_RESET"] = reset
+        crawler = get_crawler(Spider, settings_dict=settings)
+        return cls.from_crawler(crawler)
 
     def test_init(self):
         # path format is any,  the folder is not created
-        instance = self.mwcls("/any/dir", True, stats=self.stats)
+        instance = self.get_mw("/any/dir", reset=True)
         assert isinstance(instance, self.mwcls)
         assert instance.dir == "/any/dir"
-        assert self.stats.get_stats() == {}
+        assert instance.stats.get_stats() == {}
         assert instance.reset is True
 
     def test_init_from_crawler(self):
@@ -84,7 +83,7 @@ class DeltaFetchTestCase(TestCase):
         """Middleware should create a .db file if not found."""
         if self.db_path.exists():
             self.db_path.unlink()
-        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        mw = self.get_mw(dir=self.temp_dir, reset=False)
         assert not hasattr(self.mwcls, "db")
         mw.spider_opened(self.spider)
         assert self.temp_dir.is_dir()
@@ -95,7 +94,7 @@ class DeltaFetchTestCase(TestCase):
     def test_spider_opened_existing(self):
         """Middleware should open and use existing and valid .db files."""
         self._create_test_db()
-        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        mw = self.get_mw(dir=self.temp_dir, reset=False)
         assert not hasattr(self.mwcls, "db")
         mw.spider_opened(self.spider)
         assert hasattr(mw, "db")
@@ -107,7 +106,7 @@ class DeltaFetchTestCase(TestCase):
         # create an invalid .db file
         with self.db_path.open("wb") as dbfile:
             dbfile.write(b"bad")
-        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        mw = self.get_mw(dir=self.temp_dir, reset=False)
         assert not hasattr(self.mwcls, "db")
 
         # file corruption is only detected when opening spider
@@ -121,14 +120,14 @@ class DeltaFetchTestCase(TestCase):
 
     def test_spider_opened_existing_spider_reset(self):
         self._create_test_db()
-        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        mw = self.get_mw(self.temp_dir, reset=False)
         assert not hasattr(self.mwcls, "db")
         self.spider.deltafetch_reset = True
         mw.spider_opened(self.spider)
         assert mw.db.keys() == []
 
     def test_spider_opened_reset_non_existing_db(self):
-        mw = self.mwcls(self.temp_dir, reset=True, stats=self.stats)
+        mw = self.get_mw(dir=self.temp_dir, reset=True)
         assert not hasattr(self.mwcls, "db")
         self.spider.deltafetch_reset = True
         mw.spider_opened(self.spider)
@@ -136,7 +135,7 @@ class DeltaFetchTestCase(TestCase):
 
     def test_spider_opened_recreate(self):
         self._create_test_db()
-        mw = self.mwcls(self.temp_dir, reset=True, stats=self.stats)
+        mw = self.get_mw(dir=self.temp_dir, reset=True)
         assert not hasattr(self.mwcls, "db")
         mw.spider_opened(self.spider)
         assert hasattr(mw, "db")
@@ -144,7 +143,7 @@ class DeltaFetchTestCase(TestCase):
 
     def test_spider_closed(self):
         self._create_test_db()
-        mw = self.mwcls(self.temp_dir, reset=True, stats=self.stats)
+        mw = self.get_mw(dir=self.temp_dir, reset=True)
         mw.spider_opened(self.spider)
         assert mw.db.get("random") is None
         mw.spider_closed(self.spider)
@@ -153,12 +152,17 @@ class DeltaFetchTestCase(TestCase):
 
     def test_process_spider_output(self):
         self._create_test_db()
-        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        settings = {
+            "DELTAFETCH_DIR": self.temp_dir,
+            "DELTAFETCH_ENABLED": True,
+        }
+        crawler = get_crawler(Spider, settings_dict=settings)
+        mw = self.mwcls.from_crawler(crawler)
         mw.spider_opened(self.spider)
         response = mock.Mock()
         response.request = Request("http://url", meta={"deltafetch_key": "key"})
         result = []
-        assert list(mw.process_spider_output(response, result, self.spider)) == []
+        assert not list(mw.process_spider_output(response, result, self.spider))
         result = [
             # same URL but with new key --> it should be processed
             Request("http://url", meta={"deltafetch_key": "key1"}),
@@ -171,7 +175,7 @@ class DeltaFetchTestCase(TestCase):
         ]
 
         # the skipped "http://url1" should be counted in stats
-        assert self.stats.get_stats() == {"deltafetch/skipped": 1}
+        assert crawler.stats.get_stats() == {"deltafetch/skipped": 1}
 
         # b'key' should not be in the db yet as no item was collected yet
         assert set(mw.db.keys()) == {b"test_key_1", b"test_key_2"}
@@ -194,7 +198,7 @@ class DeltaFetchTestCase(TestCase):
         response = mock.Mock()
         response.request = Request("http://url")
         result = []
-        assert list(mw.process_spider_output(response, result, self.spider)) == []
+        assert not list(mw.process_spider_output(response, result, self.spider))
         result = [
             Request("http://url1"),
             # 'url1' is already in the db, but deltafetch_enabled=False
@@ -209,7 +213,7 @@ class DeltaFetchTestCase(TestCase):
 
     def test_process_spider_output_dict(self):
         self._create_test_db()
-        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        mw = self.get_mw(dir=self.temp_dir, reset=False)
         mw.spider_opened(self.spider)
         response = mock.Mock()
         response.request = Request("http://url", meta={"deltafetch_key": "key"})
@@ -220,13 +224,13 @@ class DeltaFetchTestCase(TestCase):
 
     def test_process_spider_output_stats(self):
         self._create_test_db()
-        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        mw = self.get_mw(dir=self.temp_dir)
         mw.spider_opened(self.spider)
         response = mock.Mock()
         response.request = Request("http://url", meta={"deltafetch_key": "key"})
         result = []
-        assert list(mw.process_spider_output(response, result, self.spider)) == []
-        assert self.stats.get_stats() == {}
+        assert not list(mw.process_spider_output(response, result, self.spider))
+        assert mw.stats.get_stats() == {}
         result = [
             Request("http://url", meta={"deltafetch_key": "key"}),
             Request("http://url1", meta={"deltafetch_key": "test_key_1"}),
@@ -234,15 +238,20 @@ class DeltaFetchTestCase(TestCase):
         assert list(mw.process_spider_output(response, result, self.spider)) == [
             result[0]
         ]
-        assert self.stats.get_value("deltafetch/skipped") == 1
-        result = [Item(), "not a base item"]
+        assert mw.stats.get_value("deltafetch/skipped") == 1
+
+        @dataclass
+        class TestItem:
+            foo: str
+
+        result = [Item(), TestItem("bar")]
         assert list(mw.process_spider_output(response, result, self.spider)) == result
-        assert self.stats.get_value("deltafetch/stored") == 1
+        assert mw.stats.get_value("deltafetch/stored") == 2
 
     def test_init_from_crawler_legacy(self):
         # test with subclass not handling passed stats
         class LegacyDeltaFetchSubClass(self.mwcls):
-            def __init__(self, dir, reset=False, *args, **kwargs):
+            def __init__(self, dir, reset, *args, **kwargs):
                 super().__init__(dir=dir, reset=reset)
                 self.something = True
 
@@ -283,32 +292,35 @@ class DeltaFetchTestCase(TestCase):
         # testing the subclass not handling stats works at runtime
         # (i.e. that trying to update stats does not trigger exception)
         class LegacyDeltaFetchSubClass(self.mwcls):
-            def __init__(self, dir, reset=False, *args, **kwargs):
+            def __init__(self, dir, *args, reset=False, **kwargs):
                 super().__init__(dir=dir, reset=reset)
                 self.something = True
 
         self._create_test_db()
-        mw = LegacyDeltaFetchSubClass(self.temp_dir, reset=False)
+        mw = self.get_mw(dir=self.temp_dir, reset=False, cls=LegacyDeltaFetchSubClass)
         mw.spider_opened(self.spider)
         response = mock.Mock()
         response.request = Request("http://url", meta={"deltafetch_key": "key"})
         result = []
-        assert list(mw.process_spider_output(response, result, self.spider)) == []
-        assert self.stats.get_stats() == {}
+        assert not list(mw.process_spider_output(response, result, self.spider))
+        assert mw.stats.get_stats() == {}
         result = [
             Request("http://url", meta={"deltafetch_key": "key"}),
             Request("http://url1", meta={"deltafetch_key": "test_key_1"}),
         ]
 
-        # stats should not be updated
         assert list(mw.process_spider_output(response, result, self.spider)) == [
             result[0]
         ]
-        assert self.stats.get_value("deltafetch/skipped") is None
+        assert mw.stats.get_value("deltafetch/skipped") == 1
 
-        result = [Item(), "not a base item"]
+        @dataclass
+        class TestItem:
+            foo: str
+
+        result = [Item(), TestItem("bar")]
         assert list(mw.process_spider_output(response, result, self.spider)) == result
-        assert self.stats.get_value("deltafetch/stored") is None
+        assert mw.stats.get_value("deltafetch/stored") == 2
 
     def test_get_key(self):
         settings = {
@@ -319,10 +331,12 @@ class DeltaFetchTestCase(TestCase):
         crawler = get_crawler(Spider, settings_dict=settings)
         mw = self.mwcls.from_crawler(crawler)
         test_req1 = Request("http://url1")
-        if _legacy_fingerprint:
+        try:
+            fingerprint = crawler.request_fingerprinter.fingerprint
+        except AttributeError:  # Scrapy < 2.7.0
+            from scrapy.utils.request import request_fingerprint
+
             fingerprint = request_fingerprint
-        else:
-            fingerprint = RequestFingerprinter.from_crawler(crawler).fingerprint
         assert mw._get_key(test_req1) == to_bytes(fingerprint(test_req1))
         test_req2 = Request("http://url2", meta={"deltafetch_key": b"dfkey1"})
         assert mw._get_key(test_req2) == b"dfkey1"
@@ -333,6 +347,6 @@ class DeltaFetchTestCase(TestCase):
 
     def _create_test_db(self):
         # truncate test db if there were failed tests
-        with dbm.open(self.db_path, "n") as db:
+        with dbm.open(str(self.db_path), "n") as db:
             db[b"test_key_1"] = b"test_v_1"
             db[b"test_key_2"] = b"test_v_2"
