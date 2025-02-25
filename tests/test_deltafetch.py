@@ -11,8 +11,16 @@ from scrapy.settings import Settings
 from scrapy.spiders import Spider
 from scrapy.statscollectors import StatsCollector
 from scrapy.utils.python import to_bytes
-from scrapy.utils.request import request_fingerprint
 from scrapy.utils.test import get_crawler
+
+try:
+    from scrapy.utils.request import request_fingerprint
+
+    _legacy_fingerprint = True
+except ImportError:
+    from scrapy.utils.request import RequestFingerprinter
+
+    _legacy_fingerprint = False
 
 from scrapy_deltafetch.middleware import DeltaFetch
 
@@ -176,7 +184,12 @@ class DeltaFetchTestCase(TestCase):
 
     def test_process_spider_output_with_ignored_request(self):
         self._create_test_db()
-        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        settings = {
+            "DELTAFETCH_DIR": self.temp_dir,
+            "DELTAFETCH_ENABLED": True,
+        }
+        crawler = get_crawler(Spider, settings_dict=settings)
+        mw = self.mwcls.from_crawler(crawler)
         mw.spider_opened(self.spider)
         response = mock.Mock()
         response.request = Request("http://url")
@@ -298,9 +311,19 @@ class DeltaFetchTestCase(TestCase):
         assert self.stats.get_value("deltafetch/stored") is None
 
     def test_get_key(self):
-        mw = self.mwcls(self.temp_dir, reset=True)
+        settings = {
+            "DELTAFETCH_DIR": self.temp_dir,
+            "DELTAFETCH_ENABLED": True,
+            "DELTAFETCH_RESET": True,
+        }
+        crawler = get_crawler(Spider, settings_dict=settings)
+        mw = self.mwcls.from_crawler(crawler)
         test_req1 = Request("http://url1")
-        assert mw._get_key(test_req1) == to_bytes(request_fingerprint(test_req1))
+        if _legacy_fingerprint:
+            fingerprint = request_fingerprint
+        else:
+            fingerprint = RequestFingerprinter.from_crawler(crawler).fingerprint
+        assert mw._get_key(test_req1) == to_bytes(fingerprint(test_req1))
         test_req2 = Request("http://url2", meta={"deltafetch_key": b"dfkey1"})
         assert mw._get_key(test_req2) == b"dfkey1"
 

@@ -9,7 +9,6 @@ from scrapy.http import Request
 from scrapy.item import Item
 from scrapy.utils.project import data_path
 from scrapy.utils.python import to_bytes
-from scrapy.utils.request import request_fingerprint
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +38,14 @@ class DeltaFetch:
         o = cls(dir, reset, crawler.stats)
         crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
         crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
+
+        try:
+            o.fingerprint = crawler.request_fingerprinter.fingerprint
+        except AttributeError:
+            from scrapy.utils.request import request_fingerprint
+
+            o.fingerprint = request_fingerprint
+
         return o
 
     def spider_opened(self, spider):  # noqa: D102
@@ -78,7 +85,7 @@ class DeltaFetch:
             yield r
 
     def _get_key(self, request):
-        key = request.meta.get("deltafetch_key") or request_fingerprint(request)
+        key = request.meta.get("deltafetch_key") or self.fingerprint(request)
         return to_bytes(key)
 
     def _is_enabled_for_request(self, request):
