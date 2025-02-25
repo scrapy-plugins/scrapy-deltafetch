@@ -26,21 +26,10 @@ class DeltaFetch(object):
     intensive).
     """
 
-    def __init__(self, dir, reset=False, stats=None, crawler=None):
+    def __init__(self, dir, reset=False, stats=None):
         self.dir = dir
         self.reset = reset
         self.stats = stats
-        if crawler and hasattr(crawler, 'request_fingerprinter'):
-            self.fingerprint=crawler.request_fingerprinter.fingerprint
-        else:
-            try:
-                # compatibility with Scrapy <2.7.0
-                from scrapy.utils.request import request_fingerprint
-                self.fingerprint=request_fingerprint
-            except ImportError:
-                # use the new default 
-                from scrapy.utils.request import fingerprint
-                self.fingerprint=fingerprint
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -49,9 +38,17 @@ class DeltaFetch(object):
             raise NotConfigured
         dir = data_path(s.get('DELTAFETCH_DIR', 'deltafetch'))
         reset = s.getbool('DELTAFETCH_RESET')
-        o = cls(dir, reset, crawler.stats, crawler)
+        o = cls(dir, reset, crawler.stats)
         crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
         crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
+
+        try:
+            o.fingerprint = crawler.request_fingerprinter.fingerprint
+        except AttributeError:
+            from scrapy.utils.request import request_fingerprint
+
+            o.fingerprint = request_fingerprint
+
         return o
 
     def spider_opened(self, spider):

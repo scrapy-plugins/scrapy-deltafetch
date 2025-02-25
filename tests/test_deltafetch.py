@@ -130,7 +130,7 @@ class DeltaFetchTestCase(TestCase):
         self.spider.deltafetch_reset = True
         mw.spider_opened(self.spider)
         assert mw.db.get(b'random') is None
-        
+
     def test_spider_opened_recreate(self):
         self._create_test_db()
         mw = self.mwcls(self.temp_dir, reset=True, stats=self.stats)
@@ -191,7 +191,12 @@ class DeltaFetchTestCase(TestCase):
 
     def test_process_spider_output_with_ignored_request(self):
         self._create_test_db()
-        mw = self.mwcls(self.temp_dir, reset=False, stats=self.stats)
+        settings = {
+            "DELTAFETCH_DIR": self.temp_dir,
+            "DELTAFETCH_ENABLED": True,
+        }
+        crawler = get_crawler(Spider, settings_dict=settings)
+        mw = self.mwcls.from_crawler(crawler)
         mw.spider_opened(self.spider)
         response = mock.Mock()
         response.request = Request('http://url')
@@ -322,13 +327,18 @@ class DeltaFetchTestCase(TestCase):
         self.assertEqual(self.stats.get_value('deltafetch/stored'), None)
 
     def test_get_key(self):
-        mw = self.mwcls(self.temp_dir, reset=True)
+        settings = {
+            "DELTAFETCH_DIR": self.temp_dir,
+            "DELTAFETCH_ENABLED": True,
+            "DELTAFETCH_RESET": True,
+        }
+        crawler = get_crawler(Spider, settings_dict=settings)
+        mw = self.mwcls.from_crawler(crawler)
         test_req1 = Request('http://url1')
-        crawler = get_crawler(Spider)
         if _legacy_fingerprint:
-            fingerprint=request_fingerprint
+            fingerprint = request_fingerprint
         else:
-            fingerprint=RequestFingerprinter(crawler).fingerprint
+            fingerprint = RequestFingerprinter.from_crawler(crawler).fingerprint
         self.assertEqual(mw._get_key(test_req1),
                          to_bytes(fingerprint(test_req1)))
         test_req2 = Request('http://url2', meta={'deltafetch_key': b'dfkey1'})
