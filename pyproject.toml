@@ -40,6 +40,7 @@ regex = true
 
 [[tool.bumpversion.files]]
 search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""
 filename = "pyproject.toml"
 
 [[tool.bumpversion.files]]
