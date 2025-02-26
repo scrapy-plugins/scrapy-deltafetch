@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scrapy-deltafetch"
-version = "2.0.1"
+version = "2.1.0"
 authors = [{name = "Zyte", email = "opensource@zyte.com"}]
 license = {text = "BSD"}
 description = "Scrapy middleware to ignore previously crawled pages"
@@ -28,7 +28,7 @@ dependencies = ["Scrapy>=1.1.0"]
 Homepage = "http://github.com/scrapy-plugins/scrapy-deltafetch"
 
 [tool.bumpversion]
-current_version = "2.0.1"
+current_version = "2.1.0"
 commit = true
 tag = true
 

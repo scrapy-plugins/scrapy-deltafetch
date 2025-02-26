@@ -1,7 +1,7 @@
 Changes
 =======
 
-2.1.0 (unreleased)
+2.1.0 (2025-02-26)
 ------------------
 
 * Drop support for Python 3.8 and lower, add support for Python 3.9 and higher.
