@@ -1,5 +1,15 @@
 Changes
 =======
+
+2.1.0 (unreleased)
+------------------
+
+* Drop support for Python 3.8 and lower, add support for Python 3.9 and higher.
+* Add support for Scrapy 2.12.
+* Use the ``REQUEST_FINGERPRINTER_CLASS`` setting introduced in Scrapy 2.7.
+* Support new item types introduced in Scrapy 2.2.
+* Support ``Path`` instances in the ``DELTAFETCH_DIR`` setting.
+
 2.0.0 (2021-09-20)
 ------------------
 * drop Python 2 support

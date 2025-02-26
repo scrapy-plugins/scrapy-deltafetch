@@ -1,5 +1,0 @@
--r ../requirements.txt
-mock
-pytest
-pytest-benchmark
-

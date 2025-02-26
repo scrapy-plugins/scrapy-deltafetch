@@ -1,0 +1,228 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scrapy-deltafetch"
+version = "2.0.1"
+authors = [{name = "Zyte", email = "opensource@zyte.com"}]
+license = {text = "BSD"}
+description = "Scrapy middleware to ignore previously crawled pages"
+readme = "README.rst"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+requires-python = ">=3.9"
+dependencies = ["Scrapy>=1.1.0"]
+
+[project.urls]
+Homepage = "http://github.com/scrapy-plugins/scrapy-deltafetch"
+
+[tool.bumpversion]
+current_version = "2.0.1"
+commit = true
+tag = true
+
+[[tool.bumpversion.files]]
+filename = 'CHANGES.rst'
+search = "\\(unreleased\\)$"
+replace = "({now:%Y-%m-%d})"
+regex = true
+
+[[tool.bumpversion.files]]
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""
+filename = "pyproject.toml"
+
+[[tool.bumpversion.files]]
+filename = "scrapy_deltafetch/__init__.py"
+
+[tool.coverage.run]
+branch = true
+include = ["scrapy_deltafetch/*"]
+omit = ["tests/*"]
+disable_warnings = ["include-ignored"]
+
+[tool.coverage.paths]
+source = [
+    "scrapy_deltafetch",
+    ".tox/**/site-packages/scrapy-deltafetch"
+]
+
+[tool.coverage.report]
+# https://github.com/nedbat/coveragepy/issues/831#issuecomment-517778185
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
+
+[tool.pylint.MASTER]
+persistent = "no"
+jobs = 1          # >1 hides results
+
+[tool.pylint."MESSAGES CONTROL"]
+enable = [
+    "useless-suppression",
+]
+disable = [
+    # Ones we want to ignore
+    "attribute-defined-outside-init",
+    "broad-exception-caught",
+    "consider-using-with",
+    "cyclic-import",
+    "disallowed-name",
+    "duplicate-code",  # https://github.com/pylint-dev/pylint/issues/214
+    "fixme",
+    "import-outside-toplevel",
+    "inherit-non-class",  # false positives with create_deprecated_class()
+    "invalid-name",
+    "invalid-overridden-method",
+    "isinstance-second-argument-not-valid-type",  # false positives with create_deprecated_class()
+    "line-too-long",
+    "logging-format-interpolation",
+    "logging-fstring-interpolation",
+    "logging-not-lazy",
+    "missing-docstring",
+    "no-member",
+    "no-name-in-module",  # caught by mypy already
+    "no-value-for-parameter",  # https://github.com/pylint-dev/pylint/issues/3268
+    "not-callable",
+    "protected-access",
+    "redefined-builtin",
+    "redefined-outer-name",
+    "too-few-public-methods",
+    "too-many-ancestors",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-function-args",
+    "too-many-instance-attributes",
+    "too-many-lines",
+    "too-many-locals",
+    "too-many-positional-arguments",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "unused-argument",
+    "unused-import",
+    "unused-variable",
+    "useless-import-alias",  # used as a hint to mypy
+    "useless-return",  # https://github.com/pylint-dev/pylint/issues/6530
+    "wrong-import-position",
+]
+
+[tool.ruff.lint]
+extend-select = [
+    # flake8-bugbear
+    "B",
+    # flake8-comprehensions
+    "C4",
+    # pydocstyle
+    "D",
+    # flake8-future-annotations
+    "FA",
+    # flynt
+    "FLY",
+    # refurb
+    "FURB",
+    # isort
+    "I",
+    # flake8-implicit-str-concat
+    "ISC",
+    # flake8-logging
+    "LOG",
+    # Perflint
+    "PERF",
+    # pygrep-hooks
+    "PGH",
+    # flake8-pie
+    "PIE",
+    # pylint
+    "PL",
+    # flake8-pytest-style
+    "PT",
+    # flake8-use-pathlib
+    "PTH",
+    # flake8-pyi
+    "PYI",
+    # flake8-quotes
+    "Q",
+    # flake8-return
+    "RET",
+    # flake8-raise
+    "RSE",
+    # Ruff-specific rules
+    "RUF",
+    # flake8-bandit
+    "S",
+    # flake8-simplify
+    "SIM",
+    # flake8-slots
+    "SLOT",
+    # flake8-debugger
+    "T10",
+    # flake8-type-checking
+    "TC",
+    # pyupgrade
+    "UP",
+    # pycodestyle warnings
+    "W",
+    # flake8-2020
+    "YTT",
+]
+ignore = [
+    # Missing docstring in public module
+    "D100",
+    # Missing docstring in public class
+    "D101",
+    # Missing docstring in public function
+    "D103",
+    # Missing docstring in public package
+    "D104",
+    # Missing docstring in magic method
+    "D105",
+    # Missing docstring in __init__
+    "D107",
+    # One-line docstring should fit on one line with quotes
+    "D200",
+    # No blank lines allowed after function docstring
+    "D202",
+    # 1 blank line required between summary line and description
+    "D205",
+    # Multi-line docstring closing quotes should be on a separate line
+    "D209",
+    # First line should end with a period
+    "D400",
+    # First line should be in imperative mood; try rephrasing
+    "D401",
+    # First line should not be the function's "signature"
+    "D402",
+    # Too many return statements
+    "PLR0911",
+    # Too many branches
+    "PLR0912",
+    # Too many arguments in function definition
+    "PLR0913",
+    # Too many statements
+    "PLR0915",
+    # Magic value used in comparison
+    "PLR2004",
+    # Mutable class attributes should be annotated with `typing.ClassVar`
+    "RUF012",
+    # Use of `assert` detected
+    "S101",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# D102: Missing docstring in public method
+"tests/**" = ["D102"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.setuptools]
+packages = ["scrapy_deltafetch"]
